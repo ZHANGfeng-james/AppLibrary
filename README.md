@@ -1,2 +1,5 @@
-# AppLibrary
-App 项目常见第三方库的使用和源代码解析。
+# CodeDesignPatterns
+
+来自《Android源码设计模式解析与实战》
+
+2020年7月8日实战：1.1 优化代码的第一步之单一职责原则
