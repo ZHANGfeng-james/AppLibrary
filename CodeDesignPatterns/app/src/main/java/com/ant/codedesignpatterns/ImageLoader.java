@@ -18,15 +18,18 @@ public class ImageLoader {
 
     private final ExecutorService mExecutorService;
     private final ImageCache mImageCache;
-
     private final DiskCache mDiskCache;
     private boolean isUseDiskCache = false;
+
+    private final DoubleCache mDoubleCache;
+    private boolean isUseDoubleCache = false;
 
     public ImageLoader() {
         mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         mImageCache = new ImageCache();
-
         mDiskCache = new DiskCache();
+
+        mDoubleCache = new DoubleCache();
     }
 
     private Bitmap downloadImage(String imageUrl) {
@@ -49,10 +52,17 @@ public class ImageLoader {
     }
 
     public void displayImage(final Activity activity, final String url, final ImageView imageView) {
-        Bitmap bitmap = isUseDiskCache ? mDiskCache.get("1.png") : mImageCache.getCache(url);
+        Bitmap bitmap = null;
+        if (isUseDoubleCache) {
+            bitmap = mDoubleCache.get("1.png");
+        } else if (isUseDiskCache) {
+            bitmap = mDiskCache.get("1.png");
+        } else {
+            bitmap = mImageCache.getCache(url);
+        }
+
         if (bitmap != null) {
-            Log.d(TAG, "ImageCache is cached!");
-            // ImageCache 已缓存，直接获取并填充 ImageView
+            // 已从缓存中找到 Bitmap 对象
             imageView.setImageBitmap(bitmap);
             return;
         }
@@ -78,8 +88,9 @@ public class ImageLoader {
                     });
                 }
 
-                if (isUseDiskCache) {
-                    // workThread
+                if (isUseDoubleCache) {
+                    mDoubleCache.put("1.png", bitmap);
+                } else if (isUseDiskCache) {
                     mDiskCache.put("1.png", bitmap);
                 } else {
                     mImageCache.setImageToCache(url, bitmap);
@@ -90,5 +101,9 @@ public class ImageLoader {
 
     public void useDiskCache(boolean useDiskCache) {
         this.isUseDiskCache = useDiskCache;
+    }
+
+    public void useDoubleCache(boolean useDoubleCache){
+        this.isUseDoubleCache = useDoubleCache;
     }
 }
