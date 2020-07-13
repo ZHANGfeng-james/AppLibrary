@@ -3,6 +3,7 @@ package com.ant.codedesignpatterns;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.util.Log;
 import android.widget.ImageView;
 
@@ -17,56 +18,32 @@ public class ImageLoader {
     private static final String TAG = ImageLoader.class.getSimpleName();
 
     private final ExecutorService mExecutorService;
-    private final ImageCache mImageCache;
-    private final DiskCache mDiskCache;
-    private boolean isUseDiskCache = false;
 
-    private final DoubleCache mDoubleCache;
-    private boolean isUseDoubleCache = false;
+    private ImageCache mImageCache;
 
     public ImageLoader() {
         mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        mImageCache = new ImageCache();
-        mDiskCache = new DiskCache();
-
-        mDoubleCache = new DoubleCache();
+        // 默认使用的是内存缓存器 MemeoryCache
+        mImageCache = new MemoryCache();
     }
 
-    private Bitmap downloadImage(String imageUrl) {
-        Bitmap bitmap = null;
-
-        try {
-            URL url = new URL(imageUrl);
-
-            final HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            bitmap = BitmapFactory.decodeStream(urlConnection.getInputStream());
-
-            urlConnection.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return bitmap;
+    public void setImageCache(ImageCache imageCache) {
+        this.mImageCache = imageCache;
     }
 
     public void displayImage(final Activity activity, final String url, final ImageView imageView) {
-        Bitmap bitmap = null;
-        if (isUseDoubleCache) {
-            bitmap = mDoubleCache.get("1.png");
-        } else if (isUseDiskCache) {
-            bitmap = mDiskCache.get("1.png");
-        } else {
-            bitmap = mImageCache.getCache(url);
-        }
+        Bitmap bitmap = mImageCache.get(url);
 
         if (bitmap != null) {
+            Log.d(TAG, "已从缓存中取得对象");
             // 已从缓存中找到 Bitmap 对象
             imageView.setImageBitmap(bitmap);
             return;
         }
+        submitLoadRequest(activity, url, imageView);
+    }
 
+    private void submitLoadRequest(final Activity activity, final String url, final ImageView imageView) {
         imageView.setTag(url);
 
         mExecutorService.submit(new Runnable() {
@@ -88,22 +65,27 @@ public class ImageLoader {
                     });
                 }
 
-                if (isUseDoubleCache) {
-                    mDoubleCache.put("1.png", bitmap);
-                } else if (isUseDiskCache) {
-                    mDiskCache.put("1.png", bitmap);
-                } else {
-                    mImageCache.setImageToCache(url, bitmap);
-                }
+                mImageCache.put(url, bitmap);
             }
         });
     }
 
-    public void useDiskCache(boolean useDiskCache) {
-        this.isUseDiskCache = useDiskCache;
-    }
+    private Bitmap downloadImage(String imageUrl) {
+        Bitmap bitmap = null;
 
-    public void useDoubleCache(boolean useDoubleCache){
-        this.isUseDoubleCache = useDoubleCache;
+        try {
+            URL url = new URL(imageUrl);
+
+            final HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            bitmap = BitmapFactory.decodeStream(urlConnection.getInputStream());
+
+            urlConnection.disconnect();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return bitmap;
     }
 }

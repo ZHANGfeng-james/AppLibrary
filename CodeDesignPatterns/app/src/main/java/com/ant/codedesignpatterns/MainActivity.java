@@ -68,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onResume");
 
         mImageLoader = new ImageLoader();
-        mImageLoader.useDoubleCache(true);
 
         startLoadImage();
     }

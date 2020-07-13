@@ -9,11 +9,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class DiskCache {
+public class DiskCache implements ImageCache {
     private static final String TAG = DiskCache.class.getSimpleName();
     private static final String CACHE_DIR_PATH = "sdcard/cache";
 
-    public boolean put(String url, Bitmap bitmap) {
+    @Override
+    public void put(String url, Bitmap bitmap) {
         FileOutputStream fileOutputStream = null;
         boolean outputResult = false;
         try {
@@ -44,13 +45,10 @@ public class DiskCache {
                 }
             }
         }
-
-        return outputResult;
     }
 
+    @Override
     public Bitmap get(String url) {
         return BitmapFactory.decodeFile(CACHE_DIR_PATH + File.separator + url);
     }
-
-
 }
