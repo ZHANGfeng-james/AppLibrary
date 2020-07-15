@@ -15,6 +15,15 @@ public class DiskCache implements ImageCache {
 
     @Override
     public void put(String url, Bitmap bitmap) {
+        writeBitmapToFileSystem(url, bitmap);
+    }
+
+    @Override
+    public Bitmap get(String url) {
+        return BitmapFactory.decodeFile(CACHE_DIR_PATH + File.separator + url);
+    }
+
+    private boolean writeBitmapToFileSystem(String url, Bitmap bitmap) {
         FileOutputStream fileOutputStream = null;
         boolean outputResult = false;
         try {
@@ -23,6 +32,7 @@ public class DiskCache implements ImageCache {
                 cacheDir.mkdirs();
             }
 
+            // 此处可以使用 imageUrl2MD5(url) 将图片的 url --> MD5值 作为文件名
             File destFile = new File(cacheDir + File.separator + url);
             if (!destFile.exists()) {
                 destFile.createNewFile();
@@ -34,8 +44,10 @@ public class DiskCache implements ImageCache {
             Log.d(TAG, "compress result:" + outputResult);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            return false;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         } finally {
             if (fileOutputStream != null) {
                 try {
@@ -45,10 +57,7 @@ public class DiskCache implements ImageCache {
                 }
             }
         }
-    }
 
-    @Override
-    public Bitmap get(String url) {
-        return BitmapFactory.decodeFile(CACHE_DIR_PATH + File.separator + url);
+        return true;
     }
 }
